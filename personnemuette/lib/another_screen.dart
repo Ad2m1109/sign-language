@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:html'; // For accessing the camera on the web
-import 'dart:ui' as ui;
+import 'dart:ui_web' as ui_web;
 
 class AnotherScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purple, // Changed background color to purple
+      backgroundColor: Colors.blue, // Changed background color to purple
       body: GestureToSpeechScreen(),
     );
   }
@@ -36,7 +36,7 @@ class _GestureToSpeechScreenState extends State<GestureToSpeechScreen> {
     _videoElement.style.height = '100%';
 
     // Register the video element as a Flutter view
-    ui.platformViewRegistry.registerViewFactory(
+    ui_web.platformViewRegistry.registerViewFactory(
       'camera-view',
       (int viewId) => _videoElement,
     );

@@ -114,7 +114,7 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.blue,
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
@@ -146,7 +146,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         style: TextStyle(
                           fontSize: 30.0,
                           fontWeight: FontWeight.w900,
-                          color: Colors.green,
+                          color: Colors.blue,
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -226,7 +226,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 agreePersonalData = value!;
                               });
                             },
-                            activeColor: Colors.green,
+                            activeColor: Colors.blue,
                           ),
                           const Text(
                             'I agree to the Terms and ',
@@ -236,7 +236,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             'Conditions',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              color: Colors.blue,
                             ),
                           ),
                         ],
@@ -247,7 +247,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _signUp,
-                          child: const Text('Sign up'),
+                          child: const Text('Sign up',
+                          style: TextStyle(
+                            color: Colors.blue,
+                          ),),
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -305,7 +308,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             child: Text('Sign in',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green)),
+                                    color: Colors.blue)),
                           ),
                         ],
                       ),

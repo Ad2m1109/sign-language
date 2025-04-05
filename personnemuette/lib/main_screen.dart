@@ -1,89 +1,172 @@
 import 'package:flutter/material.dart';
 import 'another_screen.dart';
+import 'add_friend_screen.dart';
+import 'about_page.dart';
+import 'sign_in_page.dart';
+import 'services/api_service.dart';
+import 'utils/user_preferences.dart';
+import 'conversation_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.purple, // Set background color to purple
-      body: Stack(
-        children: [
-          // Title at the top center
-          Positioned(
-            top: 40, // Margin from the top
-            left: 0,
-            right: 0,
-            child: Text(
-              "Sans un Mot",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String userName = "Loading...";
+  List<String> friends = []; // Dynamically fetched friends list
+  bool isDarkMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userId = await UserPreferences.getUserId();
+      final token = await UserPreferences.getUserToken();
+      if (userId != null && token != null) {
+        final userProfile = await ApiService.getUserProfile(userId, token);
+        setState(() {
+          userName = userProfile['name']; // Use the connected user's name
+          friends = List<String>.from(userProfile['friends']); // Fetch friends
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load user data: $e')),
+      );
+    }
+  }
+
+  void _toggleDarkMode() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
+
+  void _showCloseAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Close Account"),
+        content: Text("Are you sure you want to close your account?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("No"),
           ),
-          // Zone opaque for text and button
-          Positioned(
-            bottom: 0, // Adjust to be at the bottom of the screen
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 250, // Height of the opaque zone
-              color: Colors.black.withOpacity(0.5), // Black color with opacity
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center, // Center content vertically
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Center horizontally
-                children: [
-                  Text(
-                    "Bienvenue dans votre espace de communication !",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    "Une application conçue pour faciliter votre interaction avec le monde.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to the main page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AnotherScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(
-                          255, 99, 77, 137), // Button color
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      "Commencer",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => SignInPage()),
+              );
+            },
+            child: Text("Yes"),
           ),
         ],
       ),
     );
   }
-}
 
-// Add navigation logic to other screens here if needed
+  void _navigateToAddFriendScreen() async {
+    // Navigate to AddFriendScreen and wait for it to return
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddFriendScreen()),
+    );
+    // Reload the friends list after returning
+    _loadUserData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.blue,
+        title: Text(userName), // Dynamically display the connected user's name
+        actions: [
+          IconButton(
+            icon: Icon(Icons.dark_mode),
+            onPressed: _toggleDarkMode,
+          ),
+          IconButton(
+            icon: Icon(Icons.info),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AboutPage()),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: _showCloseAccountDialog,
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: friends.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isDarkMode ? Colors.grey[700] : Colors.blue[100],
+              child: Text(
+                friends[index][0]
+                    .toUpperCase(), // First letter of friend's email
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+            title: Text(
+              friends[index],
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            onTap: () async {
+              try {
+                final userId = await UserPreferences.getUserId();
+                final token = await UserPreferences.getUserToken();
+
+                if (userId != null && token != null) {
+                  // Fetch the conversation ID for the selected friend
+                  final conversationId = await ApiService.getConversationId(
+                    userId,
+                    friends[index],
+                    token,
+                  );
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ConversationPage(
+                        friendEmail: friends[index],
+                        conversationId: conversationId,
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to load conversation: $e')),
+                );
+              }
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddFriendScreen, // Use the new method
+        child: Icon(Icons.add),
+        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.blue,
+      ),
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+    );
+  }
+}

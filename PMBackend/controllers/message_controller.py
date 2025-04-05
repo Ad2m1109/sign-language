@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from modules.message_module import create_message
-from modules.user_module import find_user_by_email  # Import the new function
+from modules.user_module import find_user_by_email, add_message  # Import the new function
+import os
 
 message_bp = Blueprint('message', __name__)
 
@@ -18,4 +19,17 @@ def find_user_by_email_route():
     if user:
         return jsonify({'user': user}), 200
     return jsonify({'message': 'User not found'}), 404
+
+@message_bp.route('/add', methods=['POST'])
+def add_message_route():
+    data = request.json
+    conversation_id = data['conversationId']
+    user_id = data['userId']
+    content = data['content']
+
+    try:
+        add_message(conversation_id, user_id, content)
+        return jsonify({'message': 'Message added successfully'}), 201
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
 

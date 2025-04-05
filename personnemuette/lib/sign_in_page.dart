@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'sign_up_page.dart';
 import 'services/api_service.dart';
 import 'utils/user_preferences.dart';
-import 'forgot_password_page.dart';
 import 'main_screen.dart';
 
 class SignInPage extends StatefulWidget {
@@ -52,11 +51,12 @@ class _SignInPageState extends State<SignInPage> {
             _emailController.text.trim(), _passwordController.text.trim());
 
         final userId = response['userId'].toString();
-        final name = response['name'];
+        final name = response['name']; // Fetch the user's name
         final email = _emailController.text.trim();
         final token = response['token'];
 
-        await UserPreferences.saveUserInfo(userId, name, email);
+        await UserPreferences.saveUserInfo(
+            userId, name, email); // Save the name
         await UserPreferences.saveUserToken(token);
 
         await UserPreferences.saveRememberedCredentials(
@@ -78,7 +78,7 @@ class _SignInPageState extends State<SignInPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Login failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.blue,
         ));
       }
     }
@@ -88,7 +88,7 @@ class _SignInPageState extends State<SignInPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.blue,
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
@@ -120,7 +120,7 @@ class _SignInPageState extends State<SignInPage> {
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.blue,
                         ),
                       ),
                       const SizedBox(height: 25),
@@ -136,13 +136,13 @@ class _SignInPageState extends State<SignInPage> {
                         decoration: InputDecoration(
                           label: const Text('E-mail'),
                           hintText: "Enter E-mail",
-                          hintStyle: const TextStyle(color: Colors.black54),
+                          hintStyle: const TextStyle(color: Colors.blue),
                           border: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black45),
+                            borderSide: const BorderSide(color: Colors.black54),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black38),
+                            borderSide: const BorderSide(color: Colors.black54),
                           ),
                         ),
                       ),
@@ -161,13 +161,13 @@ class _SignInPageState extends State<SignInPage> {
                         decoration: InputDecoration(
                           label: const Text('Password'),
                           hintText: "Enter Password",
-                          hintStyle: const TextStyle(color: Colors.black54),
+                          hintStyle: const TextStyle(color: Colors.blue),
                           border: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black45),
+                            borderSide: const BorderSide(color: Colors.black54),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black38),
+                            borderSide: const BorderSide(color: Colors.black54),
                           ),
                         ),
                       ),
@@ -202,27 +202,6 @@ class _SignInPageState extends State<SignInPage> {
                                 ),
                               ],
                             ),
-                            // Forgot Password text
-                            GestureDetector(
-                              onTap: () {
-                                // Navigate to Forgot Password Page
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ForgotPasswordPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                "Forgot Password?",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: Colors.blue, // Highlight color
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -232,7 +211,12 @@ class _SignInPageState extends State<SignInPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: signInUser,
-                          child: const Text("Sign In"),
+                          child: const Text(
+                            "Sign In",
+                            style: TextStyle(
+                              color: Colors.blue,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 25),
@@ -254,7 +238,7 @@ class _SignInPageState extends State<SignInPage> {
                               "Sign Up",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: Colors.blue,
                               ),
                             ),
                           ),

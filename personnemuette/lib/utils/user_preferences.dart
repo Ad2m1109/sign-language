@@ -20,7 +20,7 @@ class UserPreferences {
       String userId, String name, String email) async {
     final prefs = await _getPrefs();
     await prefs.setString(_keyUserId, userId);
-    await prefs.setString(_keyName, name);
+    await prefs.setString(_keyName, name); // Save the user's name
     await prefs.setString(_keyEmail, email);
   }
 

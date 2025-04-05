@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Application Flutter',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
+        primarySwatch: Colors.blue,
       ),
       home: WelcomeScreen(),
     );

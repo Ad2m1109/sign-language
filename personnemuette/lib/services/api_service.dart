@@ -28,7 +28,7 @@ class ApiService {
   static Future<Map<String, dynamic>> signIn(
       String email, String password) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
+      Uri.parse('$baseUrl/users/login'), // Updated to match Flask route
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'email': email,
@@ -40,7 +40,7 @@ class ApiService {
       return json.decode(response.body);
     } else {
       final errorData = json.decode(response.body);
-      final errorMessage = errorData['message'] ?? 'Unknown error occurred';
+      final errorMessage = errorData['message'] ?? 'Invalid email or password';
       throw Exception(errorMessage);
     }
   }
@@ -57,11 +57,142 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return json.decode(response.body); // Includes the friends list
     } else {
       final errorData = json.decode(response.body);
       final errorMessage = errorData['message'] ?? 'Failed to get user profile';
       throw Exception(errorMessage);
+    }
+  }
+
+  // Get user profile by email
+  static Future<Map<String, dynamic>> getUserProfileByEmail(
+      String email, String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/get_user_by_email'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'email': email}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      final errorMessage =
+          errorData['message'] ?? 'Failed to fetch user profile';
+      throw Exception(errorMessage);
+    }
+  }
+
+  // Add a friend
+  static Future<void> addFriend(
+      String userId, String friendEmail, String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/add_friend'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'user1_id': userId,
+        'friend_email': friendEmail,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      final errorData = json.decode(response.body);
+      final errorMessage = errorData['message'] ?? 'Failed to add friend';
+      throw Exception(errorMessage);
+    }
+  }
+
+  // Fetch messages for a specific conversation
+  static Future<List<Map<String, dynamic>>> getConversationMessages(
+      String conversationId, String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/conversations/$conversationId/messages'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    } else {
+      final errorData = json.decode(response.body);
+      final errorMessage = errorData['message'] ?? 'Failed to load messages';
+      throw Exception(errorMessage);
+    }
+  }
+
+  // Fetch conversation ID for a specific user and friend
+  static Future<String> getConversationId(
+      String userId, String friendEmail, String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/conversations/get_conversation_id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'userId': userId,
+        'friendEmail': friendEmail,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['conversationId'];
+    } else {
+      final errorData = json.decode(response.body);
+      final errorMessage =
+          errorData['message'] ?? 'Failed to fetch conversation ID';
+      throw Exception(errorMessage);
+    }
+  }
+
+  // Send a new message
+  static Future<void> sendMessage(String conversationId, String userId,
+      String content, String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/messages/add'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'conversationId': conversationId,
+        'userId': userId,
+        'content': content,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      final errorData = json.decode(response.body);
+      final errorMessage = errorData['message'] ?? 'Failed to send message';
+      throw Exception(errorMessage);
+    }
+  }
+
+  // Send a voice message
+  static Future<void> sendVoiceMessage(String conversationId, String userId,
+      String filePath, String token) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/messages/add_voice'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['conversationId'] = conversationId;
+    request.fields['userId'] = userId;
+    request.files.add(await http.MultipartFile.fromPath('voice', filePath));
+
+    final response = await request.send();
+    if (response.statusCode != 201) {
+      throw Exception('Failed to send voice message');
     }
   }
 }
