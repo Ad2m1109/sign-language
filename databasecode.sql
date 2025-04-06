@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS message (
     idmessage INT(11) NOT NULL AUTO_INCREMENT,
     contenu TEXT,
     iduser INT(11) NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (idmessage),
     FOREIGN KEY (idcnv) REFERENCES conversation(idconv),
     FOREIGN KEY (iduser) REFERENCES user(id),
