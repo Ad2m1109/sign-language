@@ -166,7 +166,7 @@ class ApiService {
       },
       body: jsonEncode({
         'conversationId': conversationId,
-        'userId': userId,
+        'userId': userId, // Ensure userId is included
         'content': content,
       }),
     );
@@ -175,24 +175,6 @@ class ApiService {
       final errorData = json.decode(response.body);
       final errorMessage = errorData['message'] ?? 'Failed to send message';
       throw Exception(errorMessage);
-    }
-  }
-
-  // Send a voice message
-  static Future<void> sendVoiceMessage(String conversationId, String userId,
-      String filePath, String token) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/messages/add_voice'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.fields['conversationId'] = conversationId;
-    request.fields['userId'] = userId;
-    request.files.add(await http.MultipartFile.fromPath('voice', filePath));
-
-    final response = await request.send();
-    if (response.statusCode != 201) {
-      throw Exception('Failed to send voice message');
     }
   }
 }

@@ -28,7 +28,7 @@ def add_message_route():
     content = data['content']
 
     try:
-        add_message(conversation_id, user_id, content)
+        create_message(conversation_id, user_id, content)  # Pass user_id
         return jsonify({'message': 'Message added successfully'}), 201
     except Exception as e:
         return jsonify({'message': str(e)}), 500

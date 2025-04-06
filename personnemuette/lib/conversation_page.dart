@@ -9,8 +9,13 @@ import 'sign_language.dart';
 class ConversationPage extends StatefulWidget {
   final String friendEmail;
   final String conversationId;
+  final bool isDarkMode; // Add isDarkMode parameter
 
-  ConversationPage({required this.friendEmail, required this.conversationId});
+  ConversationPage({
+    required this.friendEmail,
+    required this.conversationId,
+    required this.isDarkMode, // Initialize isDarkMode
+  });
 
   @override
   _ConversationPageState createState() => _ConversationPageState();
@@ -24,97 +29,19 @@ class _ConversationPageState extends State<ConversationPage> {
   final ScrollController _scrollController = ScrollController();
   String? userId;
   String friendName = "Loading...";
-  FlutterSoundRecorder? _recorder;
-  bool isRecording = false;
-  String? recordedFilePath;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
     _loadFriendName();
-    _initializeRecorder();
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _recorder?.closeRecorder();
     super.dispose();
-  }
-
-  Future<void> _initializeRecorder() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      _recorder = FlutterSoundRecorder();
-      await _recorder!.openRecorder();
-      await _checkMicrophonePermission();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Audio recording is not supported on this platform.')),
-      );
-    }
-  }
-
-  Future<void> _checkMicrophonePermission() async {
-    final status = await Permission.microphone.request();
-    if (!status.isGranted) {
-      throw Exception('Microphone permission not granted');
-    }
-  }
-
-  Future<void> _startRecording() async {
-    try {
-      await _recorder!.startRecorder(
-        toFile: 'voice_message.wav', // Use a supported file format
-        codec: Codec.pcm16WAV, // Specify the codec
-      );
-      setState(() {
-        isRecording = true;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to start recording: $e')),
-      );
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    try {
-      final filePath = await _recorder!.stopRecorder();
-      setState(() {
-        isRecording = false;
-        recordedFilePath = filePath; // Assign the file path after stopping
-      });
-      if (filePath != null) {
-        await _sendVoiceMessage(filePath);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to stop recording: $e')),
-      );
-    }
-  }
-
-  Future<void> _sendVoiceMessage(String filePath) async {
-    try {
-      final token = await UserPreferences.getUserToken();
-      if (userId != null && token != null) {
-        await ApiService.sendVoiceMessage(
-          widget.conversationId,
-          userId!,
-          filePath,
-          token,
-        );
-        _loadMessages(); // Refresh the conversation screen
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send voice message: $e')),
-      );
-    }
   }
 
   Future<void> _loadMessages() async {
@@ -218,7 +145,6 @@ class _ConversationPageState extends State<ConversationPage> {
 
   Widget _buildMessageBubble(Map<String, dynamic> message) {
     final isMyMessage = message['iduser'].toString() == userId.toString();
-    final isVoiceMessage = message['message_type'] == 'voice';
 
     return Container(
       margin: EdgeInsets.only(
@@ -235,7 +161,9 @@ class _ConversationPageState extends State<ConversationPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             decoration: BoxDecoration(
-              color: isMyMessage ? Colors.blue[600] : Colors.grey[200],
+              color: isMyMessage
+                  ? (widget.isDarkMode ? Colors.blue[700] : Colors.blue[600])
+                  : (widget.isDarkMode ? Colors.grey[800] : Colors.grey[200]),
               borderRadius: BorderRadius.circular(18).copyWith(
                 bottomRight:
                     isMyMessage ? Radius.circular(0) : Radius.circular(18),
@@ -243,44 +171,20 @@ class _ConversationPageState extends State<ConversationPage> {
                     isMyMessage ? Radius.circular(18) : Radius.circular(0),
               ),
             ),
-            child: isVoiceMessage
-                ? GestureDetector(
-                    onTap: () {
-                      // Play the voice message
-                      FlutterSoundPlayer player = FlutterSoundPlayer();
-                      player.openPlayer().then((_) {
-                        player.startPlayer(fromURI: message['voice_path']);
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.play_arrow,
-                            color: isMyMessage ? Colors.white : Colors.black87),
-                        SizedBox(width: 8),
-                        Text(
-                          "Voice Message",
-                          style: TextStyle(
-                            color: isMyMessage ? Colors.white : Colors.black87,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Text(
-                    message['contenu'],
-                    style: TextStyle(
-                      color: isMyMessage ? Colors.white : Colors.black87,
-                      fontSize: 16,
-                    ),
-                  ),
+            child: Text(
+              message['contenu'],
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
+                fontSize: 16,
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
             child: Text(
               _formatTimestamp(message['timestamp'] ?? ''),
               style: TextStyle(
-                color: Colors.grey[600],
+                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[600],
                 fontSize: 11,
               ),
             ),
@@ -303,147 +207,148 @@ class _ConversationPageState extends State<ConversationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text(friendName),
+        backgroundColor: widget.isDarkMode ? Colors.grey[900] : Colors.blue,
+        title: Text(
+          friendName,
+          style: TextStyle(
+            color:
+                widget.isDarkMode ? Colors.white : Colors.black, // Adjust color
+          ),
+        ),
         elevation: 1,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: isLoading
-                ? Center(child: CircularProgressIndicator())
-                : messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          "No messages yet. Start a conversation!",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.all(10),
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          return _buildMessageBubble(messages[index]);
-                        },
-                      ),
-          ),
-          Divider(height: 1),
-          if (isWritingMessage)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: "Write your message...",
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide(color: Colors.blue),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      maxLines: null,
-                      textCapitalization: TextCapitalization.sentences,
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.send, color: Colors.white),
-                      onPressed: _sendMessage,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (!isWritingMessage)
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          isWritingMessage = true;
-                        });
-                      },
-                      icon: Icon(Icons.message),
-                      label: Text("Text Message"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SignLanguagePage(),
-                            settings: RouteSettings(
-                                arguments: widget
-                                    .conversationId), // Pass conversationId
+      body: Container(
+        color: widget.isDarkMode
+            ? Colors.black
+            : Colors.white, // Set background color
+        child: Column(
+          children: [
+            Expanded(
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : messages.isEmpty
+                      ? Center(
+                          child: Text(
+                            "No messages yet. Start a conversation!",
+                            style: TextStyle(
+                              color: widget.isDarkMode
+                                  ? Colors.white
+                                  : Colors.grey,
+                            ),
                           ),
-                        );
-                      },
-                      icon: Icon(Icons.sign_language),
-                      label: Text("Sign Language"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: EdgeInsets.all(10),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            return _buildMessageBubble(messages[index]);
+                          },
                         ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: isRecording ? _stopRecording : _startRecording,
-                      icon: Icon(isRecording ? Icons.stop : Icons.mic),
-                      label: Text(
-                          isRecording ? "Stop Recording" : "Voice Message"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-        ],
+            Divider(
+              height: 1,
+              color: widget.isDarkMode ? Colors.grey[700] : Colors.grey[300],
+            ),
+            if (isWritingMessage)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: "Write your message...",
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide(color: Colors.blue),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        maxLines: null,
+                        textCapitalization: TextCapitalization.sentences,
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.send, color: Colors.white),
+                        onPressed: _sendMessage,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (!isWritingMessage)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            isWritingMessage = true;
+                          });
+                        },
+                        icon: Icon(Icons.message),
+                        label: Text("Text Message"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SignLanguagePage(),
+                              settings: RouteSettings(
+                                  arguments: widget
+                                      .conversationId), // Pass conversationId
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.sign_language),
+                        label: Text("Sign Language"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

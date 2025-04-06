@@ -136,6 +136,8 @@ class _SignLanguagePageState extends State<SignLanguagePage> {
                                 friendEmail:
                                     '', // Pass the friend's email if available
                                 conversationId: conversationId,
+                                isDarkMode:
+                                    false, // Pass the isDarkMode parameter
                               ),
                             ),
                           );

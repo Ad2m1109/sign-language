@@ -55,10 +55,10 @@ def create_conversation(user1_id, user2_id):
 def get_conversation_messages(conversation_id):
     cursor = link.cursor(dictionary=True)
     query = """
-        SELECT idmessage, contenu, iduser, message_type, voice_path
+        SELECT idmessage, iduser, contenu, timestamp
         FROM message
         WHERE idcnv = %s
-        ORDER BY idmessage ASC
+        ORDER BY timestamp ASC
     """
     cursor.execute(query, (conversation_id,))
     messages = cursor.fetchall()
